@@ -63,3 +63,6 @@ benchmark_results.csv
 
 compare_spa_*.csv
 benchmark_diaz*.csv
+# PCAWG benchmark: raw extracts duplicate catalogues/, rebuilt by fetch_pcawg_benchmark.py
+PCAWG_Benchmark/raw/
+PCAWG_Benchmark/.work/

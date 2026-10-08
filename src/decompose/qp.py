@@ -44,14 +44,28 @@ def _solve_qp(G, C, b, d):
     return exposures
 
 
-def decomposeQP(m, P):
+def decomposeQP(m, P) -> np.ndarray:
+    """Fit one mutational profile to a signature panel with quadratic programming.
+
+    Solves ``min ||m - P x||^2`` subject to ``sum(x) == 1`` and ``x >= 0`` with
+    ``quadprog``. Tiny negative values are clipped to 0 and the result is
+    renormalised. If ``P`` has more signatures than contexts, a negligible ridge
+    is added to ``P.T @ P`` so the problem stays positive definite.
+
+    Args:
+        m (numpy.ndarray): Normalised profile, shape ``(K,)``.
+        P (numpy.ndarray): Signature panel, shape ``(K, N)``.
+
+    Returns:
+        numpy.ndarray: Exposures, shape ``(N,)``, non-negative and summing to 1.
+    """
     G, C, b = _qp_constraints(P)
     # d: vector appearing in the quadratic programming objective function
     d = np.dot(m.T, P).astype(float)
     return _solve_qp(G, C, b, d)
 
 
-def decomposeQP_batch(M, P):
+def decomposeQP_batch(M, P) -> np.ndarray:
     """`decomposeQP` for every column of `M` against the same panel `P`.
 
     Returns the (N, G) matrix of exposures, column `j` being the fit of
@@ -60,6 +74,13 @@ def decomposeQP_batch(M, P):
     per column, and the linear terms of all the columns come from one matrix
     product.  That set-up is a large share of the cost of a single small QP,
     and the bootstrap search solves the same panel R times per evaluation.
+
+    Args:
+        M (numpy.ndarray): Normalised profiles, shape ``(K, G)``.
+        P (numpy.ndarray): Signature panel, shape ``(K, N)``.
+
+    Returns:
+        numpy.ndarray: Exposures, shape ``(N, G)``.
     """
     G, C, b = _qp_constraints(P)
     # Row j is the objective's linear term for column j of M.

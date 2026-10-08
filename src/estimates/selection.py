@@ -104,65 +104,64 @@ def hybrid_stepwise_selection(
     min_fit_improvement=None,
     overdispersion=None,
     rng=None,
-):
-    """
-    pre_filter_threshold : float or None
-        If not None, run a single cheap QP solve on the original profile first
-        and discard signatures whose exposure is below this value before
-        entering the bootstrap loop.  The default 0.001 showed zero recall loss
-        on typical COSMIC data while reducing N ~4x.  Pass None to disable and
-        start the search from the full panel.  Default: 0.001.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Select the active signatures of one sample with a bootstrap stepwise search.
 
-    mandatory_indices : list of int or None
-        Column indices in the original P that are treated as permanently
-        active — analogous to SPA's permanent_sigs / background_sigs.
-        These signatures:
-          1. survive pre_filter removal,
-          2. are present in the active set from the very first bootstrap
-             iteration (so QP always decomposes other signatures relative
-             to them), and
-          3. are skipped in the backward-removal step (cannot be evicted).
-        Useful for biologically ubiquitous signatures (e.g. SBS1, SBS5).
-        Default: None (disabled).
+    The p-value of a signature is ``1 - (fraction of bootstrap replicates in
+    which its exposure exceeds threshold)``. The search starts from the full
+    (pre-filtered) panel and, in each iteration, applies the single best move:
+    removing an active signature whose p-value exceeds ``significance_level``,
+    or adding an inactive one whose p-value (once added) is below it. It stops
+    when no move helps, when a move would revisit an already-seen active set
+    (oscillation guard) or after ``max_iterations``. The bootstrap replicates
+    are drawn once and reused for the whole search.
 
-    max_iterations : int
-        Hard cap on the number of add/remove moves, as a last-resort guard.
-        The greedy search is not monotone: on degenerate profiles (very low
-        mutation counts, where bootstrap p-values are coarse) a pair of moves
-        can undo each other, so the search would otherwise oscillate forever.
-        Visited active sets are therefore memoised and the loop stops as soon
-        as a move would revisit one; `max_iterations` only backs that up.
-        Default: 1000.
+    Args:
+        m (numpy.ndarray): Profile of one sample, shape ``(K,)``; counts or
+            probabilities.
+        P (numpy.ndarray): Signature panel, shape ``(K, N)``.
+        R (int): Number of bootstrap replicates.
+        mutation_count (int, optional): Total number of mutations. Required
+            when ``m`` does not hold integer counts.
+        threshold (float): Exposure above which a signature counts as present
+            in a replicate. Default 0.01.
+        significance_level (float): p-value cutoff for adding or removing a
+            signature. Default 0.05.
+        decomposition_method (callable): Solver ``f(m, P) -> exposures``.
+            Default ``decomposeQP``.
+        pre_filter_threshold (float | None): Run one QP on the original profile
+            first and discard signatures with exposure below this value before
+            the bootstrap loop. The default 0.001 showed zero recall loss on
+            typical COSMIC data while reducing N about 4x. None disables it.
+        mandatory_indices (list[int] | None): Column indices of ``P`` that are
+            always active: they survive the pre-filter, are present from the
+            first iteration and are never removed. Useful for ubiquitous
+            signatures such as SBS1 and SBS5.
+        max_iterations (int): Hard cap on add/remove moves, a last-resort guard
+            against oscillation on degenerate low-count profiles. Default 1000.
+        min_fit_improvement (float | None): If set, follow the search with a
+            backward elimination that drops any signature whose removal costs
+            less than this much reconstruction cosine. The bootstrap asks
+            whether an exposure is stable; this asks whether it is needed.
+            0.002 was validated on ICGC-BRCA (mean MCC 0.51 -> 0.63).
+            Mandatory signatures are exempt. None disables it.
+        overdispersion (float | None): Coefficient of variation of a per-channel
+            gamma multiplier applied before every bootstrap draw (see
+            ``_bootstrap_matrix``), so a channel with ``c`` counts varies with
+            SD ``sqrt(c + (overdispersion * c)^2)``. Prevents flat signatures
+            from surviving on deep profiles. None means plain multinomial.
+        rng (None | int | SeedSequence | Generator): Source of the bootstrap
+            draws. None uses the global ``np.random``. Anything else goes
+            through ``np.random.default_rng`` and leaves the global state alone;
+            give each sample its own child of
+            ``np.random.SeedSequence(seed).spawn(n_samples)`` for reproducible
+            parallel runs.
 
-    min_fit_improvement : float or None
-        If set, follow the bootstrap search with a backward elimination pass
-        that drops any signature whose removal costs less than this much
-        reconstruction cosine.  The bootstrap criterion asks whether an exposure
-        is *stable*; this one asks whether it is *needed*, which is what stops
-        flat signatures from absorbing residual on deep profiles.  Mandatory
-        signatures are exempt.  0.002 is the value validated on ICGC-BRCA (560
-        WGS breast catalogues, COSMIC v2, Nik-Zainal Table 21 as truth): mean
-        MCC 0.51 -> 0.63, SBS3 0.68 -> 0.91, and no material change at
-        panel-level mutation burdens.  Default: None (disabled).
-
-    overdispersion : float or None
-        Coefficient of variation of a per-channel gamma multiplier applied to
-        the profile before every bootstrap draw (see `_bootstrap_matrix`).
-        The plain multinomial bootstrap has a resolution of sqrt(c) counts per
-        channel, so on deep profiles any residual that a flat signature can
-        absorb at more than `threshold` is "stable" and kept, whatever its
-        cause; with `overdispersion` = sigma the replicates also carry a
-        sigma * c component, and a signature must survive that too.
-        Default: None (plain multinomial).
-
-    rng : None, int, numpy.random.SeedSequence or numpy.random.Generator
-        Source of the bootstrap draws.  None uses the global `np.random`, so
-        `np.random.seed` controls the result.  Anything else goes through
-        `np.random.default_rng` and leaves the global state alone, which is
-        what a process pool needs: give each sample its own child of
-        `np.random.SeedSequence(seed).spawn(n_samples)` and the run is
-        reproducible whatever the worker count or scheduling.
-        Default: None.
+    Returns:
+        tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]: ``(indices,
+        exposures, errors)``: indices of the selected columns in the original
+        ``P``, their relative exposures (summing to 1) and the reconstruction
+        error (Frobenius norm).
     """
     N = P.shape[1]
     _mandatory = list(mandatory_indices) if mandatory_indices is not None else []

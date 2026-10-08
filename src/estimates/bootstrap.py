@@ -5,7 +5,7 @@ from sigconfide.utils.utils import FrobeniusNorm, is_wholenumber, resolve_rng
 
 def bootstrapSigExposures(
     m, P, R, mutation_count=None, decomposition_method=decomposeQP, rng=None
-):
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Obtain the bootstrap distribution of signature exposures for a tumor sample.
 
@@ -24,11 +24,10 @@ def bootstrapSigExposures(
             probabilities, 'mutation_count' must be specified.
         decomposition_method (function, optional): The method selected to get the
             optimal solution. It should be a function. Default is 'decomposeQP'.
-        rng (None, int, numpy.random.SeedSequence or numpy.random.Generator,
-            optional): Source of the bootstrap draws. None (default) uses the
-            global 'np.random', so 'np.random.seed' controls the result; anything
-            else goes through 'np.random.default_rng' and leaves the global
-            state alone.
+        rng (None | int | SeedSequence | Generator, optional): Source of the
+            bootstrap draws. None (default) uses the global 'np.random', so
+            'np.random.seed' controls the result; anything else goes through
+            'np.random.default_rng' and leaves the global state alone.
 
     Returns:
         tuple: A tuple containing two numpy arrays.

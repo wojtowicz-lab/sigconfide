@@ -20,6 +20,12 @@ dev = [
     "matplotlib",
     "pytest",
 ]
+docs = [
+    "black",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+]
 
 [tool.setuptools]
 packages = [

@@ -3,7 +3,9 @@ from sigconfide.decompose.qp import decomposeQP, decomposeQP_batch
 from sigconfide.utils.utils import FrobeniusNorm
 
 
-def findSigExposures(M, P, decomposition_method=decomposeQP):
+def findSigExposures(
+    M, P, decomposition_method=decomposeQP
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Find signature exposures for tumor profiles using specified decomposition method.
 

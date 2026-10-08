@@ -92,7 +92,6 @@ see `results_sigconfide/examples/run_sbs_example.py` in the monorepo root.
 ```python
 from sigconfide.estimates.standard    import findSigExposures          # fit exposures for ALL samples at once (matrix M 96×G)
 from sigconfide.estimates.bootstrap   import bootstrapSigExposures     # bootstrap distribution of exposures for one sample
-from sigconfide.estimates.crossvalidation import crossValidationSigExposures  # cross-validation
 ```
 
 ---
@@ -106,9 +105,9 @@ src/
     standard.py             # findSigExposures
     bootstrap.py            # bootstrapSigExposures
     selection.py            # hybrid_stepwise_selection  ← main selection function
-  utils/utils.py            # FrobeniusNorm, is_wholenumber
+  utils/utils.py            # FrobeniusNorm, is_wholenumber, resolve_rng
 tests/
-docs/
+docs/                       # MkDocs sources; API reference is generated from docstrings
 ```
 
 Benchmarks, example/comparison scripts and their input data are not part of

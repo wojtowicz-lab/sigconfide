@@ -1,0 +1,25 @@
+<svg class="logo" viewBox="0 0 960 320" role="img" aria-labelledby="logo-title logo-description" xmlns="http://www.w3.org/2000/svg"><style>
+      .profile { fill: #173e49; }
+      .active-signature { fill: #e66f5c; }
+      .confidence-curve, .confidence-cap {
+        fill: none;
+        stroke: #59a99c;
+        stroke-width: 13;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .wordmark text {
+        fill: #173e49;
+        font-family: "DM Sans", Arial, sans-serif;
+        font-size: 80px;
+        font-weight: 700;
+        letter-spacing: -4px;
+      }
+      .wordmark .wordmark-accent { fill: #e66f5c; }
+      .wordmark .descriptor {
+        fill: #668087;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 3.4px;
+      }
+    </style><title id="logo-title">sigconfide logo</title><desc id="logo-description">An abstract mutational signature profile crossed by a fitted confidence curve, followed by the sigconfide wordmark.</desc><g transform="translate(56 52)"><path class="profile" d="M34 176V143C34 132 43 123 54 123H66C77 123 86 132 86 143V176H34ZM96 176V96C96 85 105 76 116 76H128C139 76 148 85 148 96V176H96ZM158 176V47C158 36 167 27 178 27H190C201 27 210 36 210 47V176H158Z"/><path class="active-signature" d="M220 176V78C220 67 229 58 240 58H252C263 58 272 67 272 78V176H220Z"/><path class="confidence-curve" d="M20 61C65 16 113 23 151 72C190 122 218 151 286 111"/><path class="confidence-cap" d="M20 61L29 84M20 61L43 55M286 111L263 106M286 111L279 88"/></g><g class="wordmark" transform="translate(390 111)"><text x="0" y="72">sig</text><text class="wordmark-accent" x="142" y="72">confide</text><text class="descriptor" x="4" y="116">MUTATIONAL SIGNATURE INFERENCE</text></g></svg>

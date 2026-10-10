@@ -74,7 +74,9 @@ for idx, exp in zip(sel_idx, exposures):
 
 Most important parameters:
 - `R` — number of bootstrap replicates (more = more stable, slower),
-- `significance_level` (default `0.05`) — significance threshold for adding/removing signatures,
+- `min_support` (default `0.95`) — minimum bootstrap support (fraction of replicates in which
+  a signature's exposure exceeds `threshold`) for a signature to be kept/added; this is a
+  stability criterion, not a significance test,
 - `pre_filter_threshold` (default `0.001`) — a single fast QP solve prunes trace
   signatures before the bootstrap loop (~4× fewer signatures, no loss of sensitivity);
   pass `None` to disable it and search from the full panel,

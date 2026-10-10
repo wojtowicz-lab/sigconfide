@@ -39,15 +39,16 @@ def _bootstrap_matrix(m, mutation_count, R, overdispersion=None, rng=None):
     return counts.T / mutation_count
 
 
-def _p_values(exposures, threshold):
-    return 1.0 - (exposures > threshold).sum(axis=1) / exposures.shape[1]
+def _support(exposures, threshold):
+    """Bootstrap support: fraction of replicates in which each exposure exceeds threshold."""
+    return (exposures > threshold).sum(axis=1) / exposures.shape[1]
 
 
 def _evaluate(M, P, cols, threshold, decomposition_method):
     exposures, _ = findSigExposures(
         M, P[:, cols], decomposition_method=decomposition_method
     )
-    return _p_values(exposures, threshold)
+    return _support(exposures, threshold)
 
 
 def _reconstruction_cosine(m_norm, P, cols, decomposition_method):
@@ -60,7 +61,7 @@ def _reconstruction_cosine(m_norm, P, cols, decomposition_method):
 def _prune_by_fit_gain(m_norm, P, cols, min_gain, protected, decomposition_method):
     """Drop signatures that the reconstruction does not actually need.
 
-    The bootstrap p-value measures how *stable* an exposure is, not whether the
+    The bootstrap support measures how *stable* an exposure is, not whether the
     signature earns its place in the fit.  On deep profiles the two come apart:
     bootstrap variance shrinks with the mutation count, so a signature parked at
     a few percent is stably above `threshold` in every replicate and is kept
@@ -96,7 +97,7 @@ def hybrid_stepwise_selection(
     R,
     mutation_count=None,
     threshold=0.01,
-    significance_level=0.05,
+    min_support=0.95,
     decomposition_method=decomposeQP,
     pre_filter_threshold=0.001,
     mandatory_indices=None,
@@ -107,11 +108,12 @@ def hybrid_stepwise_selection(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Select the active signatures of one sample with a bootstrap stepwise search.
 
-    The p-value of a signature is ``1 - (fraction of bootstrap replicates in
-    which its exposure exceeds threshold)``. The search starts from the full
+    The bootstrap support of a signature is the fraction of bootstrap
+    replicates in which its exposure exceeds ``threshold``. It is a stability
+    measure, not a significance test. The search starts from the full
     (pre-filtered) panel and, in each iteration, applies the single best move:
-    removing an active signature whose p-value exceeds ``significance_level``,
-    or adding an inactive one whose p-value (once added) is below it. It stops
+    removing an active signature whose support is below ``min_support``,
+    or adding an inactive one whose support (once added) is above it. It stops
     when no move helps, when a move would revisit an already-seen active set
     (oscillation guard) or after ``max_iterations``. The bootstrap replicates
     are drawn once and reused for the whole search.
@@ -125,8 +127,8 @@ def hybrid_stepwise_selection(
             when ``m`` does not hold integer counts.
         threshold (float): Exposure above which a signature counts as present
             in a replicate. Default 0.01.
-        significance_level (float): p-value cutoff for adding or removing a
-            signature. Default 0.05.
+        min_support (float): Bootstrap support cutoff for adding or removing a
+            signature. Default 0.95.
         decomposition_method (callable): Solver ``f(m, P) -> exposures``.
             Default ``decomposeQP``.
         pre_filter_threshold (float | None): Run one QP on the original profile
@@ -194,7 +196,7 @@ def hybrid_stepwise_selection(
     # Active sets already visited by the greedy search.  The search moves one
     # signature at a time and can undo an earlier move, so without this the
     # loop can cycle indefinitely (observed on profiles with a handful of
-    # mutations, where bootstrap p-values flip around the significance level).
+    # mutations, where bootstrap supports flip around the cutoff).
     visited = {frozenset(selected)}
 
     for _ in range(max_iterations):
@@ -205,14 +207,14 @@ def hybrid_stepwise_selection(
         # Backward: try removing one selected signature.
         # Mandatory signatures are protected — skip them.
         if len(selected) > 2:
-            pv = _evaluate(
+            sup = _evaluate(
                 M, P, np.array(current_cols), threshold, decomposition_method
             )
-            pv_map = {col: pv[i] for i, col in enumerate(current_cols)}
+            sup_map = {col: sup[i] for i, col in enumerate(current_cols)}
             for s in selected:
                 if s in mandatory_local:  # ← SPA-style: never evict
                     continue
-                benefit = pv_map[s] - significance_level
+                benefit = min_support - sup_map[s]
                 if benefit > best_benefit:
                     best_benefit = benefit
                     best_move = ("remove", s)
@@ -220,9 +222,9 @@ def hybrid_stepwise_selection(
         # Forward: add one discarded signature
         for s in set(range(N)) - selected:
             test_cols = np.array(sorted(selected | {s}))
-            pv = _evaluate(M, P, test_cols, threshold, decomposition_method)
+            sup = _evaluate(M, P, test_cols, threshold, decomposition_method)
             s_pos = list(test_cols).index(s)
-            benefit = significance_level - pv[s_pos]
+            benefit = sup[s_pos] - min_support
             if benefit > best_benefit:
                 best_benefit = benefit
                 best_move = ("add", s)

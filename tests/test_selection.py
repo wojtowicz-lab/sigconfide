@@ -2,28 +2,28 @@ import numpy as np
 import pytest
 from sigconfide.estimates.selection import (
     _bootstrap_matrix,
-    _p_values,
+    _support,
     hybrid_stepwise_selection,
 )
 
 
-class TestPValues:
+class TestSupport:
     def test_known_matrix(self):
         # rows = signatures, cols = bootstrap replicates.
         exposures = np.array(
             [
-                [0.5, 0.5, 0.0],  # 2/3 replicates above threshold -> p = 1/3
-                [0.0, 0.0, 0.0],  # 0/3 replicates above threshold -> p = 1.0
-                [0.2, 0.2, 0.2],  # 3/3 replicates above threshold -> p = 0.0
+                [0.5, 0.5, 0.0],  # 2/3 replicates above threshold -> support = 2/3
+                [0.0, 0.0, 0.0],  # 0/3 replicates above threshold -> support = 0.0
+                [0.2, 0.2, 0.2],  # 3/3 replicates above threshold -> support = 1.0
             ]
         )
-        pv = _p_values(exposures, threshold=0.1)
-        assert pv == pytest.approx([1 / 3, 1.0, 0.0])
+        sup = _support(exposures, threshold=0.1)
+        assert sup == pytest.approx([2 / 3, 0.0, 1.0])
 
     def test_bounds(self):
         exposures = np.random.default_rng(0).random((4, 10))
-        pv = _p_values(exposures, threshold=0.5)
-        assert np.all((pv >= 0.0) & (pv <= 1.0))
+        sup = _support(exposures, threshold=0.5)
+        assert np.all((sup >= 0.0) & (sup <= 1.0))
 
 
 class TestBootstrapMatrix:

@@ -1,6 +1,6 @@
 site_name: sigconfide
 site_description: Mutational signature exposure fitting and selection
-repo_url: https://github.com/marcin119a/sigconfide_poc
+repo_url: https://github.com/wojtowicz-lab/sigconfide
 theme:
   name: material
   logo: assets/logo.svg

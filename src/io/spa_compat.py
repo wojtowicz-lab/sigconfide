@@ -7,7 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from sigconfide.estimates.selection import hybrid_stepwise_selection
 
 OUTPUT_NAME = "Assignment_Solution_Activities.txt"
@@ -34,8 +33,9 @@ def fit_spa_style(
     """Fit every sample and write ``<output_dir>/Assignment_Solution_Activities.txt``.
 
     Both TSVs have mutation contexts as rows; samples are columns of
-    ``samples_tsv`` and signatures are columns of ``signature_db_tsv``. The output has samples as rows, signatures as columns and
-    absolute mutation counts as values (0 for unassigned signatures).
+    ``samples_tsv`` and signatures are columns of ``signature_db_tsv``. The
+    output has samples as rows, signatures as columns and absolute mutation
+    counts as values (0 for unassigned signatures).
     """
     samples = pd.read_csv(samples_tsv, sep="\t", index_col=0)
     panel = pd.read_csv(signature_db_tsv, sep="\t", index_col=0)

@@ -40,7 +40,7 @@ def _bootstrap_matrix(m, mutation_count, R, overdispersion=None, rng=None):
 
 
 def _support(exposures, threshold):
-    """Bootstrap support: fraction of replicates in which each exposure exceeds threshold."""
+    """Bootstrap support: fraction of replicates where exposure exceeds threshold."""
     return (exposures > threshold).sum(axis=1) / exposures.shape[1]
 
 

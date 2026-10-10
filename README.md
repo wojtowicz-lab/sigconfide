@@ -96,6 +96,19 @@ from sigconfide.estimates.standard    import findSigExposures          # fit exp
 from sigconfide.estimates.bootstrap   import bootstrapSigExposures     # bootstrap distribution of exposures for one sample
 ```
 
+### Batch run (CLI)
+
+```bash
+python -m sigconfide.cli --samples samples.tsv --signatures signatures.tsv \
+    --output out_dir [--R 100] [--n-jobs 4]
+```
+
+`samples.tsv` is contexts × samples, `signatures.tsv` is contexts × signatures
+(first column = context names). The result is `out_dir/Assignment_Solution_Activities.txt`:
+a TSV with samples as rows, signatures as columns and absolute mutation counts
+as values (0 = not assigned). Python equivalent:
+`sigconfide.io.spa_compat.fit_spa_style(...)`.
+
 ---
 
 ## 3. Repository layout
@@ -107,6 +120,8 @@ src/
     standard.py             # findSigExposures
     bootstrap.py            # bootstrapSigExposures
     selection.py            # hybrid_stepwise_selection  ← main selection function
+  io/spa_compat.py          # fit_spa_style – TSV in / Activities TSV out
+  cli.py                    # python -m sigconfide.cli
   utils/utils.py            # FrobeniusNorm, is_wholenumber, resolve_rng
 tests/
 docs/                       # MkDocs sources; API reference is generated from docstrings

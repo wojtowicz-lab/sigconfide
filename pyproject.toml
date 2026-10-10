@@ -32,6 +32,7 @@ packages = [
     "sigconfide",
     "sigconfide.decompose",
     "sigconfide.estimates",
+    "sigconfide.io",
     "sigconfide.utils",
 ]
 
@@ -39,6 +40,7 @@ packages = [
 "sigconfide"            = "src"
 "sigconfide.decompose"  = "src/decompose"
 "sigconfide.estimates"  = "src/estimates"
+"sigconfide.io"         = "src/io"
 "sigconfide.utils"      = "src/utils"
 
 [tool.pytest.ini_options]

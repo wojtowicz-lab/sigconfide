@@ -5,13 +5,38 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sigconfide"
 version = "0.1.0"
+description = "Mutational signature exposure estimation and active-signature selection via QP and bootstrap"
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.10"
+authors = [
+    { name = "Marcin Wierzbiński", email = "marcin119a@gmail.com" },
+    { name = "Damian Wojtowicz" },
+]
+keywords = ["mutational signatures", "cancer genomics", "COSMIC", "bioinformatics"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
 dependencies = [
     "numpy",
     "quadprog",
     "pandas",
     "scipy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/marcin119a/sigconfide_poc"
+Repository = "https://github.com/marcin119a/sigconfide_poc"
+Issues = "https://github.com/marcin119a/sigconfide_poc/issues"
+
+[project.scripts]
+sigconfide = "sigconfide.cli:main"
 
 [project.optional-dependencies]
 dev = [

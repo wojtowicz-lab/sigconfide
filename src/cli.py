@@ -5,12 +5,14 @@ from __future__ import annotations
 import argparse
 
 import pandas as pd
-
 from sigconfide.estimates.selection import hybrid_stepwise_selection
 from sigconfide.io.spa_compat import fit_spa_style
 
 _DEFAULTS = {
-    k: v.default for k, v in __import__("inspect").signature(hybrid_stepwise_selection).parameters.items()
+    k: v.default
+    for k, v in __import__("inspect")
+    .signature(hybrid_stepwise_selection)
+    .parameters.items()
 }
 
 
@@ -48,7 +50,10 @@ def main(argv=None):
         "--dispersion-scaled",
         action=argparse.BooleanOptionalAction,
         default=_DEFAULTS["dispersion_scaled"],
-        help="scale the margin by the dispersion of the saturated fit (default %(default)s)",
+        help=(
+            "scale the margin by the dispersion of the saturated fit "
+            "(default %(default)s)"
+        ),
     )
     p.add_argument(
         "--anchor-floor",
@@ -63,9 +68,14 @@ def main(argv=None):
         help="also write Assignment_Solution_Intervals.txt: bootstrap interval of "
         "every assigned exposure",
     )
-    p.add_argument("--R", type=int, default=100, help="bootstrap replicates for --intervals")
     p.add_argument(
-        "--level", type=float, default=0.90, help="interval level for --intervals (default 0.90)"
+        "--R", type=int, default=100, help="bootstrap replicates for --intervals"
+    )
+    p.add_argument(
+        "--level",
+        type=float,
+        default=0.90,
+        help="interval level for --intervals (default 0.90)",
     )
     p.add_argument(
         "--overdispersion",

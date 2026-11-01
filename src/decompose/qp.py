@@ -52,8 +52,9 @@ def decomposeQP(m, P) -> np.ndarray:
     Solves ``min ||m - P x||^2`` subject to ``sum(x) == 1`` and ``x >= 0`` with
     ``quadprog``. Values below ``ZERO_TOL`` (solver noise, negative or
     positive) are set to 0 and the result is renormalised, so unused
-    signatures come back as exact zeros. If ``P`` has more signatures than contexts, a negligible ridge
-    is added to ``P.T @ P`` so the problem stays positive definite.
+    signatures come back as exact zeros. If ``P`` has more signatures than
+    contexts, a negligible ridge is added to ``P.T @ P`` so the problem stays
+    positive definite.
 
     Args:
         m (numpy.ndarray): Normalised profile, shape ``(K,)``.

@@ -1,4 +1,4 @@
-"""Selection of the active signatures of one sample, and the uncertainty of their exposures.
+"""Selection of a sample's active signatures and the uncertainty of their exposures.
 
 The active set is found by a forward-backward search on the Poisson deviance of
 the fit: starting from the anchor signatures, a signature is added when it
@@ -218,7 +218,9 @@ def _forward_backward(
         for s in range(N):
             if s in active:
                 continue
-            gain = base - _deviance_of(counts, P, sorted(cols + [s]), decomposition_method)
+            gain = base - _deviance_of(
+                counts, P, sorted(cols + [s]), decomposition_method
+            )
             benefit = (gain - margin) / margin
             if benefit > best_benefit:
                 best_benefit, best_move = benefit, ("add", s)
@@ -352,7 +354,13 @@ def hybrid_stepwise_selection(
     exposures = exposures.flatten()
     if anchor_floor is not None and anchors:
         indices, exposures, errors = _apply_anchor_floor(
-            m, P, indices, exposures, errors, set(anchors), anchor_floor,
+            m,
+            P,
+            indices,
+            exposures,
+            errors,
+            set(anchors),
+            anchor_floor,
             decomposition_method,
         )
     return indices, exposures, errors
@@ -428,7 +436,13 @@ def exposure_intervals(
 
 
 def selection_stability(
-    m, P, B=100, overdispersion="auto", mutation_count=None, rng=None, **selection_kwargs
+    m,
+    P,
+    B=100,
+    overdispersion="auto",
+    mutation_count=None,
+    rng=None,
+    **selection_kwargs,
 ) -> np.ndarray:
     """Fraction of bootstrap replicates in which each signature is selected.
 
@@ -442,7 +456,9 @@ def selection_stability(
     counts = _as_counts(m, mutation_count)
     n = int(round(counts.sum()))
     method = selection_kwargs.get("decomposition_method", decomposeQP)
-    indices, _, _ = hybrid_stepwise_selection(counts, P, mutation_count=n, **selection_kwargs)
+    indices, _, _ = hybrid_stepwise_selection(
+        counts, P, mutation_count=n, **selection_kwargs
+    )
     sigma = _resolve_sigma(counts, P[:, indices], overdispersion, method)
     M = _bootstrap_matrix(counts, n, B, sigma if sigma > 0 else None, rng)
     freq = np.zeros(P.shape[1])

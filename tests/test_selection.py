@@ -5,7 +5,6 @@ from sigconfide.estimates.selection import (
     _bootstrap_matrix,
     _forward_backward,
     _poisson_deviance,
-    estimate_overdispersion,
     exposure_intervals,
     hybrid_stepwise_selection,
     saturated_dispersion,
@@ -144,8 +143,6 @@ class TestBootstrapRng:
             _bootstrap_matrix(counts_profile, None, 5, rng="seed")
 
 
-
-
 @pytest.fixture
 def selection_panel():
     """A 6-context x 5-signature panel with well-separated columns."""
@@ -163,7 +160,6 @@ def selection_panel():
     return P / P.sum(axis=0)
 
 
-
 def _counts(P, weights, total=20000):
     return np.round(total * (P @ weights))
 
@@ -175,13 +171,17 @@ class TestDeviance:
         assert _poisson_deviance(x, x * 1.3) > 0
         assert _poisson_deviance(x, np.array([10.0, 3.0, 25.0, 5.0])) > 0
 
-    def test_saturated_dispersion_is_small_on_exact_and_about_one_on_poisson(self, selection_panel):
+    def test_saturated_dispersion_is_small_on_exact_and_about_one_on_poisson(
+        self, selection_panel
+    ):
         clean = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]), 50000)
         assert saturated_dispersion(clean, selection_panel) < 0.5
         rng = np.random.default_rng(1)
         P = rng.dirichlet(np.ones(48) * 0.5, size=6).T
         mu = 50000 * (P @ np.array([0.5, 0.0, 0.3, 0.0, 0.2, 0.0]))
-        phis = [saturated_dispersion(rng.poisson(mu).astype(float), P) for _ in range(20)]
+        phis = [
+            saturated_dispersion(rng.poisson(mu).astype(float), P) for _ in range(20)
+        ]
         assert 0.5 < np.median(phis) < 2.0
 
     def test_saturated_dispersion_grows_with_multiplicative_noise(self):
@@ -195,26 +195,36 @@ class TestDeviance:
 class TestForwardBackward:
     def test_adds_the_generating_signatures_and_stops(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        got = _forward_backward(counts, selection_panel, [0, 2], 10.0, set(), decomposeQP, 50)
+        got = _forward_backward(
+            counts, selection_panel, [0, 2], 10.0, set(), decomposeQP, 50
+        )
         assert got == [0, 2, 4]
 
     def test_removes_a_start_column_that_is_not_needed(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        got = _forward_backward(counts, selection_panel, [0, 1, 2], 10.0, set(), decomposeQP, 50)
+        got = _forward_backward(
+            counts, selection_panel, [0, 1, 2], 10.0, set(), decomposeQP, 50
+        )
         assert got == [0, 2, 4]
 
     def test_never_removes_a_protected_column(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        got = _forward_backward(counts, selection_panel, [0, 1, 2], 10.0, {1}, decomposeQP, 50)
+        got = _forward_backward(
+            counts, selection_panel, [0, 1, 2], 10.0, {1}, decomposeQP, 50
+        )
         assert 1 in got and {0, 2, 4} <= set(got)
 
     def test_a_huge_margin_adds_nothing(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        assert _forward_backward(counts, selection_panel, [0, 2], 1e9, set(), decomposeQP, 50) == [0, 2]
+        assert _forward_backward(
+            counts, selection_panel, [0, 2], 1e9, set(), decomposeQP, 50
+        ) == [0, 2]
 
     def test_max_iterations_caps_the_moves(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        assert _forward_backward(counts, selection_panel, [0, 1], 10.0, set(), decomposeQP, 1) != [0, 2, 4]
+        assert _forward_backward(
+            counts, selection_panel, [0, 1], 10.0, set(), decomposeQP, 1
+        ) != [0, 2, 4]
 
 
 class TestHybridStepwiseSelection:
@@ -256,30 +266,40 @@ class TestHybridStepwiseSelection:
 
     def test_anchor_indices_always_present(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        idx, _, _ = hybrid_stepwise_selection(counts, selection_panel, anchor_indices=[1], anchor_floor=None)
+        idx, _, _ = hybrid_stepwise_selection(
+            counts, selection_panel, anchor_indices=[1], anchor_floor=None
+        )
         assert 1 in idx.tolist()
         assert {0, 2, 4} <= set(idx.tolist())
 
     def test_anchor_floor_drops_unused_anchor(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        idx, expo, _ = hybrid_stepwise_selection(counts, selection_panel, anchor_indices=[1], anchor_floor=0.002)
+        idx, expo, _ = hybrid_stepwise_selection(
+            counts, selection_panel, anchor_indices=[1], anchor_floor=0.002
+        )
         assert 1 not in idx.tolist()
         assert sorted(idx.tolist()) == [0, 2, 4]
         assert expo.sum() == pytest.approx(1.0)
 
     def test_anchor_floor_keeps_used_anchor(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.1, 0.3, 0.0, 0.1]))
-        idx, _, _ = hybrid_stepwise_selection(counts, selection_panel, anchor_indices=[1], anchor_floor=0.002)
+        idx, _, _ = hybrid_stepwise_selection(
+            counts, selection_panel, anchor_indices=[1], anchor_floor=0.002
+        )
         assert 1 in idx.tolist()
 
     def test_anchor_floor_keeps_at_least_two(self, simple_P):
         counts = _counts(simple_P, np.array([0.0, 0.0, 1.0]))
-        idx, _, _ = hybrid_stepwise_selection(counts, simple_P, anchor_indices=[0, 1], anchor_floor=0.5)
+        idx, _, _ = hybrid_stepwise_selection(
+            counts, simple_P, anchor_indices=[0, 1], anchor_floor=0.5
+        )
         assert len(idx) >= 2
 
     def test_one_anchor_starts_from_the_strongest_column_too(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        idx, _, _ = hybrid_stepwise_selection(counts, selection_panel, anchor_indices=[3], anchor_floor=None)
+        idx, _, _ = hybrid_stepwise_selection(
+            counts, selection_panel, anchor_indices=[3], anchor_floor=None
+        )
         assert {0, 2, 3, 4} == set(idx.tolist())
 
     def test_dispersion_scaling_raises_the_margin_on_noisy_data(self):
@@ -295,7 +315,9 @@ class TestHybridStepwiseSelection:
     def test_margin_must_be_positive(self, counts_profile, simple_P):
         for bad in (None, 0.0, -1.0):
             with pytest.raises(ValueError, match="min_deviance_gain"):
-                hybrid_stepwise_selection(counts_profile, simple_P, min_deviance_gain=bad)
+                hybrid_stepwise_selection(
+                    counts_profile, simple_P, min_deviance_gain=bad
+                )
 
     def test_defaults(self):
         import inspect
@@ -316,10 +338,14 @@ class TestHybridStepwiseSelection:
 class TestExposureIntervals:
     def test_brackets_the_estimate_and_narrows_with_depth(self, selection_panel):
         for total, width_cap in ((2000, 0.2), (200000, 0.05)):
-            counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]), total)
+            counts = _counts(
+                selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]), total
+            )
             idx, expo, _ = hybrid_stepwise_selection(counts, selection_panel)
             ci = exposure_intervals(counts, selection_panel, idx, B=60, rng=0)
-            assert np.all(ci["lower"] <= expo + 1e-9) and np.all(expo - 1e-9 <= ci["upper"])
+            assert np.all(ci["lower"] <= expo + 1e-9) and np.all(
+                expo - 1e-9 <= ci["upper"]
+            )
             assert np.all(ci["upper"] - ci["lower"] < width_cap)
             assert ci["replicates"].shape == (len(idx), 60)
 
@@ -335,8 +361,12 @@ class TestExposureIntervals:
     def test_fixed_sigma_widens_the_interval(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]), 50000)
         idx = np.array([0, 2, 4])
-        narrow = exposure_intervals(counts, selection_panel, idx, B=60, overdispersion=None, rng=0)
-        wide = exposure_intervals(counts, selection_panel, idx, B=60, overdispersion=0.2, rng=0)
+        narrow = exposure_intervals(
+            counts, selection_panel, idx, B=60, overdispersion=None, rng=0
+        )
+        wide = exposure_intervals(
+            counts, selection_panel, idx, B=60, overdispersion=0.2, rng=0
+        )
         assert np.all(wide["upper"] - wide["lower"] > narrow["upper"] - narrow["lower"])
 
     def test_same_rng_same_interval_and_invalid_sigma_raises(self, selection_panel):
@@ -347,16 +377,22 @@ class TestExposureIntervals:
         assert np.array_equal(a["replicates"], b["replicates"])
         for bad in (-0.1, "lots"):
             with pytest.raises(ValueError, match="overdispersion"):
-                exposure_intervals(counts, selection_panel, idx, B=5, overdispersion=bad)
+                exposure_intervals(
+                    counts, selection_panel, idx, B=5, overdispersion=bad
+                )
 
     def test_single_signature_has_a_degenerate_interval(self, selection_panel):
         counts = _counts(selection_panel, np.array([1.0, 0.0, 0.0, 0.0, 0.0]))
         ci = exposure_intervals(counts, selection_panel, np.array([0]), B=5, rng=0)
-        assert ci["lower"] == pytest.approx([1.0]) and ci["upper"] == pytest.approx([1.0])
+        assert ci["lower"] == pytest.approx([1.0]) and ci["upper"] == pytest.approx(
+            [1.0]
+        )
 
 
 class TestSelectionStability:
-    def test_true_signatures_are_stable_and_absent_ones_never_picked(self, selection_panel):
+    def test_true_signatures_are_stable_and_absent_ones_never_picked(
+        self, selection_panel
+    ):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
         freq = selection_stability(counts, selection_panel, B=20, rng=0)
         assert freq.shape == (5,)
@@ -365,5 +401,7 @@ class TestSelectionStability:
 
     def test_anchors_are_always_selected(self, selection_panel):
         counts = _counts(selection_panel, np.array([0.5, 0.0, 0.3, 0.0, 0.2]))
-        freq = selection_stability(counts, selection_panel, B=10, rng=0, anchor_indices=[1], anchor_floor=None)
+        freq = selection_stability(
+            counts, selection_panel, B=10, rng=0, anchor_indices=[1], anchor_floor=None
+        )
         assert freq[1] == 1.0

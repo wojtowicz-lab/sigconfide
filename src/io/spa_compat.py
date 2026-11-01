@@ -11,7 +11,15 @@ from sigconfide.estimates.selection import exposure_intervals, hybrid_stepwise_s
 
 OUTPUT_NAME = "Assignment_Solution_Activities.txt"
 INTERVALS_NAME = "Assignment_Solution_Intervals.txt"
-INTERVAL_COLUMNS = ["Samples", "Signature", "Exposure", "Lower", "Upper", "SD", "sigma_b"]
+INTERVAL_COLUMNS = [
+    "Samples",
+    "Signature",
+    "Exposure",
+    "Lower",
+    "Upper",
+    "SD",
+    "sigma_b",
+]
 
 
 def _fit_sample(args):
@@ -25,12 +33,28 @@ def _fit_sample(args):
     rows = []
     if intervals:
         ci = exposure_intervals(
-            m, P, sel_idx, B=R, overdispersion=overdispersion, level=level,
-            decomposition_method=kwargs.get("decomposition_method", hybrid_stepwise_selection.__defaults__[5]),
+            m,
+            P,
+            sel_idx,
+            B=R,
+            overdispersion=overdispersion,
+            level=level,
+            decomposition_method=kwargs.get(
+                "decomposition_method", hybrid_stepwise_selection.__defaults__[5]
+            ),
         )
         rows = [
-            (int(j), float(e * n), float(lo * n), float(hi * n), float(sd * n), float(ci["sigma_b"]))
-            for j, e, lo, hi, sd in zip(sel_idx, exposures, ci["lower"], ci["upper"], ci["sd"])
+            (
+                int(j),
+                float(e * n),
+                float(lo * n),
+                float(hi * n),
+                float(sd * n),
+                float(ci["sigma_b"]),
+            )
+            for j, e, lo, hi, sd in zip(
+                sel_idx, exposures, ci["lower"], ci["upper"], ci["sd"]
+            )
         ]
     return dense * n, rows
 
@@ -69,7 +93,15 @@ def fit_spa_style(
 
     P = panel.values.astype(float)
     tasks = [
-        (samples[s].values.astype(float), P, selection_kwargs, intervals, R, overdispersion, level)
+        (
+            samples[s].values.astype(float),
+            P,
+            selection_kwargs,
+            intervals,
+            R,
+            overdispersion,
+            level,
+        )
         for s in samples.columns
     ]
     if n_jobs == 1:

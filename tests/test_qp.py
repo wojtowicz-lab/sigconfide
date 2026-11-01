@@ -45,8 +45,10 @@ def test_unused_signatures_are_exact_zeros():
 
     rng = np.random.default_rng(0)
     K, N = 96, 30
-    P = rng.random((K, N)); P /= P.sum(axis=0)
-    truth = np.zeros(N); truth[[0, 5, 17]] = [0.6, 0.3, 0.1]
+    P = rng.random((K, N))
+    P /= P.sum(axis=0)
+    truth = np.zeros(N)
+    truth[[0, 5, 17]] = [0.6, 0.3, 0.1]
     m = P @ truth
     x = decomposeQP(m, P)
     assert np.all((x == 0) | (x >= ZERO_TOL))
